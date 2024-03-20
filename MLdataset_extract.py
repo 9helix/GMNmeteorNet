@@ -2,94 +2,17 @@ import os
 import shutil
 from PIL import Image
 import math
-import numpy as np
+#import numpy as np
 
 from RMS.Formats import FTPdetectinfo
 from RMS.Formats import FFfile
+from RMS.MLFilter import blackfill
 
 """
-This script is used for preprocessing ML datasets, specifically extracting station's .config files, FTPdetectinfo and .fits files. Fits files are converted to pngs and cropped to the meteor detection according to its location on the image stored in FTPdetectinfo. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
-add_zeros_row, add_zeros_col, blackfill, crop_detection, cropPNG are functions taken from the RMS repo and slightly modified
+This script is used for preprocessing ML datasets, specifically extracting station's .config files, FTPdetectinfo and .fits files. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
+Functions crop_detection, cropPNG  were taken from the RMS repo and slightly modified.
 repo link: https://github.com/CroatianMeteorNetwork/RMS
 """
-
-
-def add_zeros_row(image, top_or_bottom, num_rows_to_add):
-    """adds rows of zeros to either the top or bottom of the numpy array
-    if performance is important the same effect can be achieved using numpy slicing which is faster
-    """
-    image_shape = np.shape(image)
-    # shape returns (num_rows, num_cols)
-    # num_rows = image_shape[0]
-    num_cols = image_shape[1]
-
-    zero_rows = np.zeros((num_rows_to_add, num_cols))
-
-    if top_or_bottom == "top":
-        new_image = np.vstack((zero_rows, image))
-        return new_image
-    elif top_or_bottom == "bottom":
-        new_image = np.vstack((image, zero_rows))
-        return new_image
-    # return None which will cause an error if invalid inputs have been used
-    return
-
-
-def add_zeros_col(image, left_or_right, num_cols_to_add):
-    """adds columns of zeros to either the left or right of the numpy array
-    if performance is important the same effect can be achieved using numpy slicing which is faster
-    """
-    image_shape = np.shape(image)
-    # shape returns (num_rows, num_cols)
-    num_rows = image_shape[0]
-    # num_cols = image_shape[1]
-    zero_cols = np.zeros((num_rows, num_cols_to_add))
-
-    if left_or_right == "left":
-        new_image = np.hstack((zero_cols, image))
-        return new_image
-    elif left_or_right == "right":
-        new_image = np.hstack((image, zero_cols))
-        return new_image
-    # return None which will cause an error if invalid inputs have been used
-    return
-
-
-def blackfill(
-    image, leftover_top=0, leftover_bottom=0, leftover_left=0, leftover_right=0
-):
-    """
-    Padds the image with zeros based on leftovers.
-    """
-
-    if leftover_top > 0:
-        image = add_zeros_row(image, "top", leftover_top)
-    if leftover_bottom > 0:
-        image = add_zeros_row(image, "bottom", leftover_bottom)
-    if leftover_left > 0:
-        image = add_zeros_col(image, "left", leftover_left)
-    if leftover_right > 0:
-        image = add_zeros_col(image, "right", leftover_right)
-
-    if np.shape(image)[0] == np.shape(image)[1]:
-        new_image = image[:, :]
-        return new_image
-
-    if np.shape(image)[0] < np.shape(image)[1]:
-        rows_needed = np.shape(image)[1] - np.shape(image)[0]
-        image = add_zeros_row(image, "top", math.floor(rows_needed / 2))
-        image = add_zeros_row(image, "bottom", math.ceil(rows_needed / 2))
-        new_image = image[:, :]
-        return new_image
-
-    if np.shape(image)[1] < np.shape(image)[0]:
-        cols_needed = np.shape(image)[0] - np.shape(image)[1]
-        image = add_zeros_col(image, "left", math.floor(cols_needed / 2))
-        image = add_zeros_col(image, "right", math.ceil(cols_needed / 2))
-        new_image = image[:, :]
-        return new_image
-
-    return
 
 
 def crop_detection(detection_info, fits_dir, padding=20):
@@ -184,7 +107,7 @@ def cropPNG(fits_path: str, ftp_path: str):
     os.makedirs(image_dest, exist_ok=True)
 
     meteor_list = FTPdetectinfo.readFTPdetectinfo(
-        os.path.dirname(ftp_path), os.path.basename(ftp_path)
+        destination, os.path.basename(ftp_path)
     )
 
     for detection_entry in meteor_list:
