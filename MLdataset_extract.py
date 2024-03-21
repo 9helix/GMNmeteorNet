@@ -150,7 +150,7 @@ def extract_data(folder_path, limit=0):
         limit = limit / 4.61  # keep original unbalanced class ratio
     unfiltered_imgs = []
 
-    # img_count = 0
+    img_count = 0
 
     folder = os.listdir(folder_path)
     random.shuffle(folder)
@@ -202,15 +202,17 @@ def extract_data(folder_path, limit=0):
                     #    "FTPdetectinfo file already exists in",
                     #    filtered_subfolder_path,
                     # )
-
-        if 0 < limit <= len(unfiltered_imgs):  # limit number of images processed
+        #print(limit, len(unfiltered_imgs))
+        for i in unfiltered_imgs:
+            # preproccess/crop the file here
+            cropPNG(i, ftp_path)
+            unfiltered_imgs.remove(i)
+            img_count += 1
+        unfiltered_imgs = []
+        if 0 < limit <= img_count:  # limit number of images processed
             break
-        
-    for i in unfiltered_imgs:
-        # preproccess/crop the file here
-        cropPNG(i, ftp_path)
-        unfiltered_imgs.remove(i)
-        # img_count += 1
+
+
     print("\nTotal images processed:", len(unfiltered_imgs))
     print()
 
