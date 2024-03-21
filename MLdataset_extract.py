@@ -2,7 +2,7 @@ import os
 import shutil
 from PIL import Image
 import math
-#import numpy as np
+import random
 
 from RMS.Formats import FTPdetectinfo
 from RMS.Formats import FFfile
@@ -130,10 +130,19 @@ def cropPNG(fits_path: str, ftp_path: str):
 
 
 def extract_data(folder_path, limit=0):
-    # limit is number of confirmed images, 0 means no limit
-    # stations_config_state = {}
+    """
+    Extracts relevant data for ML dataset from the given folder path.
+
+    Args:
+        folder_path (str): The path to the folder containing the data.
+        limit (int, optional): The number of confirmed images to extract.
+            If set to 0, there is no limit. Default is 0.
+
+    Returns:
+        None
+    """
     current_destination = os.path.join(
-        destination,
+        destination,"cropped",
         "ConfirmedFiles/" if "ConfirmedFiles" in folder_path else "RejectedFiles/",
     )
     if "ConfirmedFiles" not in folder_path:
@@ -141,7 +150,7 @@ def extract_data(folder_path, limit=0):
     unfiltered_imgs = []
 
     img_count = 0
-    for subfolder in os.listdir(folder_path):
+    for subfolder in random.shuffle(os.listdir(folder_path)):
 
         subfolder_path = os.path.join(folder_path, subfolder)
 
@@ -159,7 +168,7 @@ def extract_data(folder_path, limit=0):
 
         # station_name = subfolder[:6]
         # stations_config_state[station_name] = False
-        filtered_subfolder_path = os.path.join(current_destination, "nights", subfolder)
+        filtered_subfolder_path = os.path.join(current_destination, subfolder)
         os.makedirs(filtered_subfolder_path, exist_ok=True)
 
         print("Tranforming FF files in:", subfolder_path)
@@ -189,17 +198,6 @@ def extract_data(folder_path, limit=0):
                     #    "FTPdetectinfo file already exists in",
                     #    filtered_subfolder_path,
                     # )
-            """
-            # copy the config file to the station folder
-            if file == ".config":
-                stations_config_state[station_name] = True
-                station_path = os.path.join(current_destination, "configs",station_name)
-                if not os.path.isdir(station_path):
-                    os.mkdir(station_path)
-                    shutil.copy(file_path, station_path)
-                else:
-                    print("Station folder already exists in", station_path)
-            """
 
         for i in unfiltered_imgs:
             # preproccess/crop the file here
@@ -209,12 +207,7 @@ def extract_data(folder_path, limit=0):
 
         if limit != 0 and limit <= img_count:  # limit number of images processed
             break
-    """
-    configs = os.path.join(current_destination, "configs")
-    for i in stations_config_state:
-        if i not in os.listdir(configs):
-            print("Station", i, "is missing a .config file")
-    """
+
     print("\nTotal images processed:", img_count)
     print()
 
@@ -229,14 +222,7 @@ def get_configs(path):
     Returns:
         None
     """
-    current_destination = os.path.join(
-        destination,
-        (
-            "ConfirmedFiles/configs/"
-            if "ConfirmedFiles" in path
-            else "RejectedFiles/configs/"
-        ),
-    )
+    current_destination = os.path.join(destination, "configs")
     stations_config_state = {}
     ct = 0
     ct2 = 0
@@ -260,7 +246,7 @@ def get_configs(path):
                     print("Found .config for", station_name)
 
                     ct2 += 1
-                    os.makedirs(station_path)
+                    os.makedirs(station_path, exist_ok=True)
                     shutil.copy(file_path, station_path)
                 else:
                     pass
@@ -273,7 +259,7 @@ def get_configs(path):
 
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
-destination = "/home/dgrzinic/mldataset/cropped/"
+destination = "/home/dgrzinic/mldataset/"
 for i in dirs:
     print(i)
     # get_configs(i)
