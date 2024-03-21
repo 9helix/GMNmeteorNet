@@ -209,6 +209,7 @@ def extract_data(folder_path, limit=0):
             # preproccess/crop the file here
             if 0 < limit <= img_count:  # limit number of images processed
                 stop=True
+                break
             cropPNG(i, ftp_path)
             unfiltered_imgs.remove(i)
             img_count += 1
