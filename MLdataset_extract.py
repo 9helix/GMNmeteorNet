@@ -154,7 +154,7 @@ def extract_data(folder_path, limit=0):
 
     folder = os.listdir(folder_path)
     random.shuffle(folder)
-    stop=False
+    stop = False
     for subfolder in folder:
 
         subfolder_path = os.path.join(folder_path, subfolder)
@@ -199,24 +199,18 @@ def extract_data(folder_path, limit=0):
                     shutil.copy(file_path, filtered_subfolder_path)
                 else:
                     pass
-                    # print(
-                    #    "FTPdetectinfo file already exists in",
-                    #    filtered_subfolder_path,
-                    # )
-        #print(limit, len(unfiltered_imgs))
 
         for i in unfiltered_imgs:
             # preproccess/crop the file here
             if 0 < limit <= img_count:  # limit number of images processed
-                stop=True
+                stop = True
                 break
             cropPNG(i, ftp_path)
+            # it can produce more than one image
             img_count += 1
         unfiltered_imgs = []
         if stop:
             break
-
-
 
     print("\nTotal images processed:", img_count)
     print()
@@ -285,4 +279,5 @@ for i in dirs:
     if args.g:
         get_configs(i)
     else:
+        get_configs(i)
         extract_data(i, 821)
