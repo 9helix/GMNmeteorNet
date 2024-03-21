@@ -150,7 +150,10 @@ def extract_data(folder_path, limit=0):
     unfiltered_imgs = []
 
     img_count = 0
-    for subfolder in random.shuffle(os.listdir(folder_path)):
+    
+    folder= os.listdir(folder_path)
+    random.shuffle(folder)
+    for subfolder in folder:
 
         subfolder_path = os.path.join(folder_path, subfolder)
 
