@@ -211,7 +211,6 @@ def extract_data(folder_path, limit=0):
                 stop=True
                 break
             cropPNG(i, ftp_path)
-            unfiltered_imgs.remove(i)
             img_count += 1
         unfiltered_imgs = []
         if stop:
@@ -260,7 +259,7 @@ def get_configs(path):
                     os.makedirs(station_path, exist_ok=True)
                     shutil.copy(file_path, station_path)
                 else:
-                    print("Config for station", station_name, "already found")
+                    pass
 
     print("Total .config files found:", ct)
     print("Total .config files copied:", ct2)
