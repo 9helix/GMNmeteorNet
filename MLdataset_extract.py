@@ -142,16 +142,17 @@ def extract_data(folder_path, limit=0):
         None
     """
     current_destination = os.path.join(
-        destination,"cropped",
+        destination,
+        "cropped",
         "ConfirmedFiles/" if "ConfirmedFiles" in folder_path else "RejectedFiles/",
     )
     if "ConfirmedFiles" not in folder_path:
         limit = limit / 4.61  # keep original unbalanced class ratio
     unfiltered_imgs = []
 
-    img_count = 0
+    # img_count = 0
 
-    folder= os.listdir(folder_path)
+    folder = os.listdir(folder_path)
     random.shuffle(folder)
     for subfolder in folder:
 
@@ -174,7 +175,7 @@ def extract_data(folder_path, limit=0):
         filtered_subfolder_path = os.path.join(current_destination, subfolder)
         os.makedirs(filtered_subfolder_path, exist_ok=True)
 
-        print("Tranforming FF files in:", subfolder_path)
+        print("Fecthing files in:", subfolder_path)
         for file in os.listdir(subfolder_path):
             file_path = os.path.join(subfolder_path, file)
 
@@ -202,16 +203,15 @@ def extract_data(folder_path, limit=0):
                     #    filtered_subfolder_path,
                     # )
 
-        for i in unfiltered_imgs:
-            # preproccess/crop the file here
-            cropPNG(i, ftp_path)
-            unfiltered_imgs.remove(i)
-            img_count += 1
-
-        if limit != 0 and limit <= img_count:  # limit number of images processed
+        if 0 < limit <= len(unfiltered_imgs):  # limit number of images processed
             break
-
-    print("\nTotal images processed:", img_count)
+        
+    for i in unfiltered_imgs:
+        # preproccess/crop the file here
+        cropPNG(i, ftp_path)
+        unfiltered_imgs.remove(i)
+        # img_count += 1
+    print("\nTotal images processed:", len(unfiltered_imgs))
     print()
 
 
@@ -252,8 +252,8 @@ def get_configs(path):
                     os.makedirs(station_path, exist_ok=True)
                     shutil.copy(file_path, station_path)
                 else:
-                    pass
-                    # print("Station folder already exists in", station_path)
+                    print("Config for station", station_name, "already found")
+
     print("Total .config files found:", ct)
     print("Total .config files copied:", ct2)
     for i in stations_config_state:
@@ -266,8 +266,8 @@ destination = "/home/dgrzinic/mldataset/"
 import argparse
 
 # Create a parser for the command-line arguments
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-g', action='store_true', help='Execute get_configs')
+parser = argparse.ArgumentParser(description="Process some integers.")
+parser.add_argument("-g", action="store_true", help="Execute get_configs")
 
 # Parse the command-line arguments
 args = parser.parse_args()
