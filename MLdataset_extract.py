@@ -154,6 +154,7 @@ def extract_data(folder_path, limit=0):
 
     folder = os.listdir(folder_path)
     random.shuffle(folder)
+    stop=False
     for subfolder in folder:
 
         subfolder_path = os.path.join(folder_path, subfolder)
@@ -203,17 +204,21 @@ def extract_data(folder_path, limit=0):
                     #    filtered_subfolder_path,
                     # )
         #print(limit, len(unfiltered_imgs))
+
         for i in unfiltered_imgs:
             # preproccess/crop the file here
+            if 0 < limit <= img_count:  # limit number of images processed
+                stop=True
             cropPNG(i, ftp_path)
             unfiltered_imgs.remove(i)
             img_count += 1
         unfiltered_imgs = []
-        if 0 < limit <= img_count:  # limit number of images processed
+        if stop:
             break
 
 
-    print("\nTotal images processed:", len(unfiltered_imgs))
+
+    print("\nTotal images processed:", img_count)
     print()
 
 
