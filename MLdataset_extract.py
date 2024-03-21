@@ -150,7 +150,7 @@ def extract_data(folder_path, limit=0):
     unfiltered_imgs = []
 
     img_count = 0
-    
+
     folder= os.listdir(folder_path)
     random.shuffle(folder)
     for subfolder in folder:
@@ -263,7 +263,19 @@ def get_configs(path):
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
 destination = "/home/dgrzinic/mldataset/"
+import argparse
+
+# Create a parser for the command-line arguments
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('-g', action='store_true', help='Execute get_configs')
+
+# Parse the command-line arguments
+args = parser.parse_args()
+
+
 for i in dirs:
     print(i)
-    # get_configs(i)
-    extract_data(i, 821)
+    if args.g:
+        get_configs(i)
+    else:
+        extract_data(i, 821)
