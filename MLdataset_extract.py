@@ -109,7 +109,7 @@ def cropPNG(fits_path: str, ftp_path: str):
     meteor_list = FTPdetectinfo.readFTPdetectinfo(
         destination, os.path.basename(ftp_path)
     )
-
+    ct=0
     for detection_entry in meteor_list:
 
         # Read FTPdetectinfo name and meteor number
@@ -127,6 +127,8 @@ def cropPNG(fits_path: str, ftp_path: str):
             im = Image.fromarray(square_crop_image)
             im = im.convert("L")  # converts to grescale
             im.save(os.path.join(image_dest, png_name + ".png"))
+            ct+=1
+    return ct
 
 
 def extract_data(folder_path, limit=0):
@@ -150,7 +152,8 @@ def extract_data(folder_path, limit=0):
         limit = limit / 4.61  # keep original unbalanced class ratio
     unfiltered_imgs = []
 
-    img_count = 0
+    fits_count = 0
+    png_count = 0
 
     folder = os.listdir(folder_path)
     random.shuffle(folder)
@@ -202,17 +205,18 @@ def extract_data(folder_path, limit=0):
 
         for i in unfiltered_imgs:
             # preproccess/crop the file here
-            if 0 < limit <= img_count:  # limit number of images processed
+            if 0 < limit <= fits_count:  # limit number of images processed
                 stop = True
                 break
-            cropPNG(i, ftp_path)
+            png_count+=cropPNG(i, ftp_path)
             # it can produce more than one image
-            img_count += 1
+            fits_count += 1
         unfiltered_imgs = []
         if stop:
             break
 
-    print("\nTotal images processed:", img_count)
+    print("\nTotal fits processed:", fits_count)
+    print("\nTotal pngs generated:", png_count)
     print()
 
 
