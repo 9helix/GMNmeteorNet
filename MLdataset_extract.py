@@ -9,9 +9,9 @@ from RMS.Formats import FFfile
 from RMS.MLFilter import blackfill
 
 """
-This script is used for preprocessing ML datasets, specifically extracting station's .config files, FTPdetectinfo and .fits files. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
-Functions crop_detection, cropPNG  were taken from the RMS repo and slightly modified.
-repo link: https://github.com/CroatianMeteorNetwork/RMS
+This script is used for setting up ML datasets, specifically extracting station's .config files, FTPdetectinfo and .fits files on the server-side. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
+Functions crop_detection, cropPNG  were taken from the MLFilter.py on the RMS repo and slightly modified.
+repo link: https://github.com/CroatianMeteorNetwork/RMS/blob/master/RMS/MLFilter.py
 """
 
 
@@ -146,7 +146,7 @@ def extract_data(folder_path, limit=0):
     current_destination = os.path.join(
         destination,
         "cropped",
-        "ConfirmedFiles/" if "ConfirmedFiles" in folder_path else "RejectedFiles/",
+        "Meteors/" if "ConfirmedFiles" in folder_path else "Artifacts/",
     )
     if "ConfirmedFiles" not in folder_path:
         limit = limit / 4.61  # keep original unbalanced class ratio
@@ -283,5 +283,4 @@ for i in dirs:
     if args.g:
         get_configs(i)
     else:
-        get_configs(i)
         extract_data(i, 821)
