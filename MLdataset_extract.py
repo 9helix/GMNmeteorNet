@@ -1,11 +1,12 @@
-import os
-import shutil
-from PIL import Image
+import argparse
 import math
+import os
 import random
+import shutil
 
-from RMS.Formats import FTPdetectinfo
-from RMS.Formats import FFfile
+from PIL import Image
+
+from RMS.Formats import FFfile, FTPdetectinfo
 from RMS.MLFilter import blackfill
 
 """
@@ -109,7 +110,7 @@ def cropPNG(fits_path: str, ftp_path: str):
     meteor_list = FTPdetectinfo.readFTPdetectinfo(
         destination, os.path.basename(ftp_path)
     )
-    ct=0
+    ct = 0
     for detection_entry in meteor_list:
 
         # Read FTPdetectinfo name and meteor number
@@ -121,13 +122,13 @@ def cropPNG(fits_path: str, ftp_path: str):
         )
         # print(fits_file_name,os.path.basename(ftp_path))
         if fits_file_name == os.path.basename(fits_path):
-            square_crop_image = crop_detection(detection_entry, fits_path)
+            square_crop_image = crop_detection(detection_entry, fits_path, padding=args.padding)
 
             # save the Numpy array as a png using PIL
             im = Image.fromarray(square_crop_image)
             im = im.convert("L")  # converts to grescale
             im.save(os.path.join(image_dest, png_name + ".png"))
-            ct+=1
+            ct += 1
     return ct
 
 
@@ -208,7 +209,7 @@ def extract_data(folder_path, limit=0):
             if 0 < limit <= fits_count:  # limit number of images processed
                 stop = True
                 break
-            png_count+=cropPNG(i, ftp_path)
+            png_count += cropPNG(i, ftp_path)
             # it can produce more than one image
             fits_count += 1
         unfiltered_imgs = []
@@ -268,19 +269,28 @@ def get_configs(path):
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
 destination = "/home/dgrzinic/mldataset/"
-import argparse
+
 
 # Create a parser for the command-line arguments
-parser = argparse.ArgumentParser(description="Process some integers.")
-parser.add_argument("-g", action="store_true", help="Execute get_configs")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-c", action="store_true", help="Execute get_configs instead of extract_data"
+)
+parser.add_argument(
+    "-n", type=int, nargs="?", default=821, help="Number of positive examples"
+)
+parser.add_argument(
+    "padding", type=int, nargs="?", default=20, help="Detection padding in px"
+)
 
 # Parse the command-line arguments
 args = parser.parse_args()
-
+print("Padding:", args.padding, "\nNumber of positive examples:", args.n)
 
 for i in dirs:
-    print(i)
-    if args.g:
+    if args.c:
+        print("Getting configs for", i)
         get_configs(i)
     else:
-        extract_data(i, 821)
+        print("Extracting data for", i)
+        extract_data(i, args.n)
