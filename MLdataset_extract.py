@@ -108,7 +108,7 @@ def cropPNG(fits_path: str, ftp_path: str,destination:str):
     #os.makedirs(image_dest, exist_ok=True)
 
     meteor_list = FTPdetectinfo.readFTPdetectinfo(
-        ftp_path
+        destination, os.path.basename(ftp_path)
     )
     ct = 0
     for detection_entry in meteor_list:
