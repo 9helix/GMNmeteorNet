@@ -149,6 +149,8 @@ def extract_data(folder_path, limit=0):
         "cropped",
         "Meteors/" if "ConfirmedFiles" in folder_path else "Artifacts/",
     )
+    os.makedirs(current_destination, exist_ok=True)
+    
     if "ConfirmedFiles" not in folder_path:
         limit = limit / 4.61  # keep original unbalanced class ratio
     unfiltered_imgs = []
@@ -271,7 +273,6 @@ def get_configs(path):
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
 destination = "/home/dgrzinic/mldataset/"
-
 
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()
