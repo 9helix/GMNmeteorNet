@@ -196,17 +196,19 @@ def extract_data(folder_path, limit=0):
                 and file[14].isalpha()
                 and file[15].isalpha()
             ):
-                ftp_path = os.path.join(filtered_subfolder_path, file)
+                ftp_path = os.path.join(subfolder_path, file)
 
+                """ might extract into separate function later, as these are  not required for training the model     
+                ftp_path = os.path.join(filtered_subfolder_path, file)       
                 os.makedirs(filtered_subfolder_path, exist_ok=True)
                 if not os.path.exists(ftp_path):
                     shutil.copy(file_path, filtered_subfolder_path)
                 else:
-                    pass
+                    pass """
 
         for i in unfiltered_imgs:
             # preproccess/crop the file here
-            if 0 < limit <= fits_count:  # limit number of images processed
+            if 0 < limit <= png_count:  # limit number of images processed
                 stop = True
                 break
             png_count += cropPNG(i, ftp_path)
@@ -217,7 +219,7 @@ def extract_data(folder_path, limit=0):
             break
 
     print("\nTotal fits processed:", fits_count)
-    print("\nTotal pngs generated:", png_count)
+    print("Total pngs generated:", png_count)
     print()
 
 
@@ -285,7 +287,7 @@ parser.add_argument(
 
 # Parse the command-line arguments
 args = parser.parse_args()
-print("Padding:", args.padding, "\nNumber of positive examples:", args.n)
+print("Padding:", args.padding, "\nNumber of positive examples:", args.n, "\n")
 
 for i in dirs:
     if args.c:
