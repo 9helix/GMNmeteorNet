@@ -102,13 +102,13 @@ def crop_detection(detection_info, fits_dir, padding=20):
     return square_crop_image
 
 
-def cropPNG(fits_path: str, ftp_path: str):
+def cropPNG(fits_path: str, ftp_path: str,destination:str):
     destination = os.path.dirname(ftp_path)
     image_dest = os.path.join(destination, "images")
-    os.makedirs(image_dest, exist_ok=True)
+    #os.makedirs(image_dest, exist_ok=True)
 
     meteor_list = FTPdetectinfo.readFTPdetectinfo(
-        destination, os.path.basename(ftp_path)
+        ftp_path
     )
     ct = 0
     for detection_entry in meteor_list:
@@ -127,7 +127,7 @@ def cropPNG(fits_path: str, ftp_path: str):
             # save the Numpy array as a png using PIL
             im = Image.fromarray(square_crop_image)
             im = im.convert("L")  # converts to grescale
-            im.save(os.path.join(image_dest, png_name + ".png"))
+            im.save(os.path.join(destination, png_name + ".png"))
             ct += 1
     return ct
 
@@ -178,7 +178,7 @@ def extract_data(folder_path, limit=0):
         # station_name = subfolder[:6]
         # stations_config_state[station_name] = False
         filtered_subfolder_path = os.path.join(current_destination, subfolder)
-        os.makedirs(filtered_subfolder_path, exist_ok=True)
+        #os.makedirs(filtered_subfolder_path, exist_ok=True) saving all images in same folder for now
 
         print("Fecthing files in:", subfolder_path)
         for file in os.listdir(subfolder_path):
@@ -197,7 +197,7 @@ def extract_data(folder_path, limit=0):
                 and file[15].isalpha()
             ):
                 ftp_path = os.path.join(subfolder_path, file)
-
+                
                 """ might extract into separate function later, as these are  not required for training the model     
                 ftp_path = os.path.join(filtered_subfolder_path, file)       
                 os.makedirs(filtered_subfolder_path, exist_ok=True)
@@ -211,7 +211,7 @@ def extract_data(folder_path, limit=0):
             if 0 < limit <= png_count:  # limit number of images processed
                 stop = True
                 break
-            png_count += cropPNG(i, ftp_path)
+            png_count += cropPNG(i, ftp_path,current_destination)
             # it can produce more than one image
             fits_count += 1
         unfiltered_imgs = []
