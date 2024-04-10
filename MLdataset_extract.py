@@ -16,7 +16,7 @@ repo link: https://github.com/CroatianMeteorNetwork/RMS/blob/master/RMS/MLFilter
 """
 
 
-def crop_detection(detection_info, fits_dir, padding=20):
+def crop_detection(detection_info, fits_dir, padding=20, should_crop=True):
     # taken from MLFilter.crop_detections
     fits_file_name = detection_info[0]
     # meteor_num = detection_info[2]
@@ -36,7 +36,8 @@ def crop_detection(detection_info, fits_dir, padding=20):
     detect_only_frames = FFfile.selectFFFrames(
         detect_only, fits_file, first_frame_no, last_frame_no
     )
-
+    if not should_crop:
+        return detect_only_frames
     # get size of the image
     row_size = detect_only_frames.shape[0]
     col_size = detect_only_frames.shape[1]
@@ -102,14 +103,12 @@ def crop_detection(detection_info, fits_dir, padding=20):
     return square_crop_image
 
 
-def cropPNG(fits_path: str, ftp_path: str,destination:str):
+def cropPNG(fits_path: str, ftp_path: str, destination: str):
     ftp_dir = os.path.dirname(ftp_path)
-    image_dest = os.path.join(destination, "images")
-    #os.makedirs(image_dest, exist_ok=True)
+    # image_dest = os.path.join(destination, "images")
+    # os.makedirs(image_dest, exist_ok=True)
 
-    meteor_list = FTPdetectinfo.readFTPdetectinfo(
-        ftp_dir, os.path.basename(ftp_path)
-    )
+    meteor_list = FTPdetectinfo.readFTPdetectinfo(ftp_dir, os.path.basename(ftp_path))
     ct = 0
     for detection_entry in meteor_list:
 
@@ -122,7 +121,12 @@ def cropPNG(fits_path: str, ftp_path: str,destination:str):
         )
         # print(fits_file_name,os.path.basename(ftp_path))
         if fits_file_name == os.path.basename(fits_path):
-            square_crop_image = crop_detection(detection_entry, fits_path, padding=args.padding)
+            square_crop_image = crop_detection(
+                detection_entry,
+                fits_path,
+                padding=args.padding,
+                should_crop=args.no_crop,
+            )
 
             # save the Numpy array as a png using PIL
             im = Image.fromarray(square_crop_image)
@@ -146,11 +150,11 @@ def extract_data(folder_path, limit=0):
     """
     current_destination = os.path.join(
         destination,
-        "cropped",
+        "uncropped" if not args.no_crop else "cropped",
         "Meteors/" if "ConfirmedFiles" in folder_path else "Artifacts/",
     )
     os.makedirs(current_destination, exist_ok=True)
-    
+
     if "ConfirmedFiles" not in folder_path:
         limit = limit / 4.61  # keep original unbalanced class ratio
     unfiltered_imgs = []
@@ -180,7 +184,7 @@ def extract_data(folder_path, limit=0):
         # station_name = subfolder[:6]
         # stations_config_state[station_name] = False
         filtered_subfolder_path = os.path.join(current_destination, subfolder)
-        #os.makedirs(filtered_subfolder_path, exist_ok=True) saving all images in same folder for now
+        # os.makedirs(filtered_subfolder_path, exist_ok=True) saving all images in same folder for now
 
         print("Fecthing files in:", subfolder_path)
         for file in os.listdir(subfolder_path):
@@ -199,7 +203,7 @@ def extract_data(folder_path, limit=0):
                 and file[15].isalpha()
             ):
                 ftp_path = os.path.join(subfolder_path, file)
-                
+
                 """ might extract into separate function later, as these are  not required for training the model     
                 ftp_path = os.path.join(filtered_subfolder_path, file)       
                 os.makedirs(filtered_subfolder_path, exist_ok=True)
@@ -213,7 +217,7 @@ def extract_data(folder_path, limit=0):
             if 0 < limit <= png_count:  # limit number of images processed
                 stop = True
                 break
-            png_count += cropPNG(i, ftp_path,current_destination)
+            png_count += cropPNG(i, ftp_path, current_destination)
             # it can produce more than one image
             fits_count += 1
         unfiltered_imgs = []
@@ -276,6 +280,7 @@ destination = "/home/dgrzinic/mldataset/"
 
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()
+
 parser.add_argument(
     "-c", action="store_true", help="Execute get_configs instead of extract_data"
 )
@@ -285,11 +290,14 @@ parser.add_argument(
 parser.add_argument(
     "padding", type=int, nargs="?", default=20, help="Detection padding in px"
 )
+parser.add_argument("--no_crop", action="store_false", help="Disable image cropping")
 
 # Parse the command-line arguments
 args = parser.parse_args()
-print("Padding:", args.padding, "\nNumber of positive examples:", args.n, "\n")
-
+print("Padding:", args.padding, "\nNumber of positive examples:", args.n)
+print(
+    "Image cropping disabled." if not args.no_crop else "Image cropping enabled.", "\n"
+)
 for i in dirs:
     if args.c:
         print("Getting configs for", i)
