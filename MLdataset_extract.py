@@ -285,7 +285,7 @@ parser.add_argument(
     "-c", action="store_true", help="Execute get_configs instead of extract_data"
 )
 parser.add_argument(
-    "-n", type=int, nargs="?", default=821, help="Number of positive examples"
+    "-n", type=int, nargs="?", default=821, help="Number of positive examples. Use 0 to disable limit."
 )
 parser.add_argument(
     "padding", type=int, nargs="?", default=20, help="Detection padding in px"
