@@ -276,7 +276,7 @@ def get_configs(path):
 
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
-destination = "/home/dgrzinic/mldataset/"
+destination = "./mldataset/"
 
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()

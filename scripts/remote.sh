@@ -3,6 +3,6 @@
 cd ~
 cd GMNmeteorNet
 git pull
-cd ..
 taskset -c 0 python GMNmeteorNet/MLdataset_extract.py
+rm mldataset.tar.bz2
 tar -cjf mldataset.tar.bz2 mldataset
