@@ -15,4 +15,16 @@ Model notes
 Fiachra's model had 3441 (13.44 KB) parameters.
 CNN_20240630_1 has 384k (1.47 MB) parameters.
 
+These are the best 3 models:
+CNN_20240505_1 has Fbeta score 0.986. 5391 (21.06 KB) parameters.
+CNN_20240505_2 has Fbeta score 0.992. 24115 (94.20 KB) parameters.
+CNN_20240618_3 has Fbeta score 0.991. 1966 (7.68 KB) parameters.
+
+Model CNN_20240618_3 is deemed the best as it least overfits on the training data, has small number of parameters and second highest Fbeta score.
+
+Fbeta score is currently used with beta=2. It is the approximation that recall is twice as important as precision.
 for current hypermodel configuration, hyperband peaks at around 0.993 fbeta score even when given additional ammount of resources. additional changes to the configuration will be required in order to increase performance.
+
+Model CNN_20240618_3
+False negatives (6 out of 1702 positives) are mostly thick and oversaturated meteors and ones with very thin trails.
+False positives (50 out of 366 negatives) are mostly twisted lines and briht noisy artifacts. There is a chance of small portion of them being mislabeled.
