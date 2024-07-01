@@ -1,4 +1,18 @@
 augmenting artifact images to completely balance out classes worsens performance.
 same goes for per_image_standardization
+
 recall is a better indicator of proportion of correctly identified positives than pure number of false negative.
-when class balancing is applied model learns much faster.
+instead of recall, f beta score can be used to adjust f1score in favor of recall so it also takes into account precision as it also has to be relatively high, not just recall. 
+when class balancing is applied, model learns much faster.
+lenet model reaches peak performance in 2 epochs, then training and validation diverge. maybe with layer parameter optimization it can improve.
+kerastuner's prebuilt hypermodels wont be used for now as they are computationally expensive to tune which isn't worth when goal here is binary classification hile those models are more suitable for complex classification tasks.
+
+hyperband finds sligtly better models than bayesian optimization but it takes it 2 times more time than for bayesop.
+
+commented line 88 in .venv/lib/python3.10/site-packages/tensorboard/plugins/scalar/summary_v2.py as it prevented tensorboard from working with keras tuner.
+
+Model notes
+Fiachra's model had 3441 (13.44 KB) parameters.
+CNN_20240630_1 has 384k (1.47 MB) parameters.
+
+for current hypermodel configuration, hyperband peaks at around 0.993 fbeta score even when given additional ammount of resources. additional changes to the configuration will be required in order to increase performance.
