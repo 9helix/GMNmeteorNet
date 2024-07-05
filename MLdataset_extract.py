@@ -10,7 +10,7 @@ from RMS.Formats import FFfile, FTPdetectinfo
 from RMS.MLFilter import blackfill
 
 """
-This script is used for setting up ML datasets, specifically extracting station's .config files, FTPdetectinfo and .fits files on the server-side. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
+This script is used for setting up ML dataset, specifically extracting station's .config files, FTPdetectinfo and .fits files on the server-side. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
 Functions crop_detection, cropPNG  were taken from the MLFilter.py on the RMS repo and slightly modified.
 repo link: https://github.com/CroatianMeteorNetwork/RMS/blob/master/RMS/MLFilter.py
 """
@@ -157,6 +157,17 @@ def extract_data(folder_path, limit=0):
 
     if "ConfirmedFiles" not in folder_path:
         limit = limit / 4.61  # keep original unbalanced class ratio
+    if not args.clean:
+        num_files = len(
+            [
+                name
+                for name in os.listdir(current_destination)
+                if os.path.isfile(os.path.join(current_destination, name))
+            ]
+        )
+        print(f"Number of existing images in {current_destination}: {num_files}")
+        limit -= num_files
+
     unfiltered_imgs = []
 
     fits_count = 0
@@ -183,7 +194,7 @@ def extract_data(folder_path, limit=0):
 
         # station_name = subfolder[:6]
         # stations_config_state[station_name] = False
-        filtered_subfolder_path = os.path.join(current_destination, subfolder)
+        # filtered_subfolder_path = os.path.join(current_destination, subfolder)
         # os.makedirs(filtered_subfolder_path, exist_ok=True) saving all images in same folder for now
 
         print("Fecthing files in:", subfolder_path)
@@ -285,12 +296,19 @@ parser.add_argument(
     "-c", action="store_true", help="Execute get_configs instead of extract_data"
 )
 parser.add_argument(
-    "-n", type=int, nargs="?", default=821, help="Number of positive examples. Use 0 to disable limit."
+    "-n",
+    type=int,
+    nargs="?",
+    default=821,
+    help="Number of positive examples. Use 0 to disable limit.",
 )
 parser.add_argument(
     "padding", type=int, nargs="?", default=20, help="Detection padding in px"
 )
 parser.add_argument("--no_crop", action="store_false", help="Disable image cropping")
+parser.add_argument(
+    "--clean", action="store_true", help="Deletes existing mldataset folder."
+)
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -303,5 +321,7 @@ for i in dirs:
         print("Getting configs for", i)
         get_configs(i)
     else:
+        if args.clean:
+            shutil.rmtree(destination, ignore_errors=True)
         print("Extracting data for", i)
         extract_data(i, args.n)

@@ -27,4 +27,7 @@ for current hypermodel configuration, hyperband peaks at around 0.993 fbeta scor
 
 Model CNN_20240618_3
 False negatives (6 out of 1702 positives) are mostly thick and oversaturated meteors and ones with very thin trails.
-False positives (50 out of 366 negatives) are mostly twisted lines and briht noisy artifacts. There is a chance of small portion of them being mislabeled.
+False positives (50 out of 366 negatives) are mostly twisted lines and bright noisy artifacts. There is a chance of small portion of them being mislabeled.
+
+TODO
+experiment with padding when creating images for dataset.
