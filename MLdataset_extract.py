@@ -155,8 +155,11 @@ def extract_data(folder_path, limit=0):
     )
     os.makedirs(current_destination, exist_ok=True)
 
-    if "ConfirmedFiles" not in folder_path:
-        limit = limit / 4.61  # keep original unbalanced class ratio
+    # keep original unbalanced class ratio
+    if "ConfirmedFiles" in folder_path:
+        limit = limit * 0.8217
+    else:
+        limit = limit * 0.1783
     if not args.clean:
         num_files = len(
             [
@@ -300,7 +303,7 @@ parser.add_argument(
     type=int,
     nargs="?",
     default=821,
-    help="Number of positive examples. Use 0 to disable limit.",
+    help="Number of images to extract. May vary slightly due to different amount of detections in a single fits file. Use 0 to disable limit.",
 )
 parser.add_argument(
     "padding", type=int, nargs="?", default=20, help="Detection padding in px"
