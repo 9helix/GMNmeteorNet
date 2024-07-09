@@ -3,6 +3,7 @@ import math
 import os
 import random
 import shutil
+from datetime import datetime
 
 from PIL import Image
 
@@ -157,9 +158,9 @@ def extract_data(folder_path, limit=0):
 
     # keep original unbalanced class ratio
     if "ConfirmedFiles" in folder_path:
-        limit = limit * 0.8217
+        limit = int(limit * 0.8217)
     else:
-        limit = limit * 0.1783
+        limit = int(limit * 0.1783)
     if not args.clean:
         num_files = len(
             [
@@ -180,7 +181,9 @@ def extract_data(folder_path, limit=0):
     if args.newest_first:
         folder = sorted(
             folder,
-            key=lambda x: os.path.getmtime(os.path.join(folder_path, x)),
+            key=lambda x: datetime.strptime(
+                x.split("_")[1] + x.split("_")[2], "%Y%m%d%H%M%S"
+            ),
             reverse=True,
         )
     else:
@@ -333,12 +336,13 @@ print("Padding:", args.padding, "\nNumber of positive examples:", args.n)
 print(
     "Image cropping disabled." if not args.no_crop else "Image cropping enabled.", "\n"
 )
+
+if args.clean:
+    shutil.rmtree(destination, ignore_errors=True)
 for i in dirs:
     if args.c:
         print("Getting configs for", i)
         get_configs(i)
     else:
-        if args.clean:
-            shutil.rmtree(destination, ignore_errors=True)
         print("Extracting data for", i)
         extract_data(i, args.n)
