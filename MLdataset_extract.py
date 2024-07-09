@@ -177,7 +177,15 @@ def extract_data(folder_path, limit=0):
     png_count = 0
 
     folder = os.listdir(folder_path)
-    random.shuffle(folder)
+    if args.newest_first:
+        folder = sorted(
+            folder,
+            key=lambda x: os.path.getmtime(os.path.join(folder_path, x)),
+            reverse=True,
+        )
+    else:
+        random.shuffle(folder)
+
     stop = False
     for subfolder in folder:
 
@@ -311,6 +319,11 @@ parser.add_argument(
 parser.add_argument("--no_crop", action="store_false", help="Disable image cropping")
 parser.add_argument(
     "--clean", action="store_true", help="Deletes existing mldataset folder."
+)
+parser.add_argument(
+    "--newest-first",
+    action="store_true",
+    help="Extract files starting from newest first. Default is random order.",
 )
 
 # Parse the command-line arguments
