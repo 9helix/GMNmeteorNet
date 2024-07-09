@@ -243,6 +243,7 @@ def extract_data(folder_path, limit=0):
             # it can produce more than one image
             fits_count += 1
         unfiltered_imgs = []
+        print(f"{png_count}/{limit}")
         if stop:
             break
 
