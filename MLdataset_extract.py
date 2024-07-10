@@ -4,6 +4,7 @@ import os
 import random
 import shutil
 from datetime import datetime
+import tarfile
 
 from PIL import Image
 
@@ -151,7 +152,6 @@ def extract_data(folder_path, limit=0):
     """
     current_destination = os.path.join(
         destination,
-        "uncropped" if not args.no_crop else "cropped",
         "Meteors/" if "ConfirmedFiles" in folder_path else "Artifacts/",
     )
     os.makedirs(current_destination, exist_ok=True)
@@ -302,7 +302,7 @@ def get_configs(path):
 
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
-destination = "./mldataset/"
+destination = "./mldatasets/"
 
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()
@@ -314,7 +314,7 @@ parser.add_argument(
     "-n",
     type=int,
     nargs="?",
-    default=821,
+    default=1000,
     help="Number of images to extract. May vary slightly due to different amount of detections in a single fits file. Use 0 to disable limit.",
 )
 parser.add_argument(
@@ -332,6 +332,10 @@ parser.add_argument(
 
 # Parse the command-line arguments
 args = parser.parse_args()
+
+current_date = datetime.now().strftime("%Y%m%d")
+dataset_name = f"{args.n}_p{args.padding}_{'newest' if args.newest_first else 'random'}{'_no_crop' if args.no_crop else 'crop'}_{current_date}"
+destination = os.path.join(destination, dataset_name)
 print("Padding:", args.padding, "\nNumber of positive examples:", args.n)
 print(
     "Image cropping disabled." if not args.no_crop else "Image cropping enabled.", "\n"
@@ -346,3 +350,8 @@ for i in dirs:
     else:
         print("Extracting data for", i)
         extract_data(i, args.n)
+
+print("\n\nCompressing and archiving the dataset...")
+with tarfile.open(f"{dataset_name}.tar.bz2", "w:bz2") as tar:
+    tar.add(destination, arcname=".")
+print(f"{dataset_name}.tar.bz2 has been created successfully.")

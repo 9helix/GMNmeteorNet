@@ -1,0 +1,2 @@
+Extract 30000 images into a fresh dataset, with the newest images first.
+taskset -c 0 python GMNmeteorNet/MLdataset_extract.py -n 30000 --clean --newest-first
