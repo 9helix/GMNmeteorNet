@@ -32,6 +32,8 @@ def crop_detection(detection_info, fits_dir, padding=20, should_crop=True):
 
     # image array with background set to 0 so detections stand out more
     # TODO inlcude code to use mask for the camera, currently masks not available on the data given to me, Fiachra Feehilly (2021)
+    if fits_file is None:
+        return None
     detect_only = fits_file.maxpixel - fits_file.avepixel
 
     # set image to only include frames where detection occurs, reduces likelihood that there will then be multiple detections in the same cropped image
@@ -126,10 +128,11 @@ def cropPNG(fits_path: str, ftp_path: str, destination: str):
             square_crop_image = crop_detection(
                 detection_entry,
                 fits_path,
-                padding=args.padding,
+                padding=args.p,
                 should_crop=args.no_crop,
             )
-
+            if square_crop_image is None:
+                continue
             # save the Numpy array as a png using PIL
             im = Image.fromarray(square_crop_image)
             im = im.convert("L")  # converts to grescale
@@ -156,23 +159,17 @@ def extract_data(folder_path, limit=0):
     )
     os.makedirs(current_destination, exist_ok=True)
 
-    # keep original unbalanced class ratio
+    # apply limits per class
     if "ConfirmedFiles" in folder_path:
-        limit = int(limit * 0.8217)
+        if args.k:
+            limit = int(limit * 0.8217)
+        else:
+            limit = int(limit * 0.5)
     else:
-        limit = int(limit * 0.1783)
-    if not args.clean:
-        num_files = len(
-            [
-                name
-                for name in os.listdir(current_destination)
-                if os.path.isfile(os.path.join(current_destination, name))
-            ]
-        )
-        print(f"Number of existing images in {current_destination}: {num_files}")
-        limit -= num_files
-
-    unfiltered_imgs = []
+        if args.k:
+            limit = int(limit * 0.1783)
+        else:
+            limit = int(limit * 0.5)
 
     fits_count = 0
     png_count = 0
@@ -194,30 +191,20 @@ def extract_data(folder_path, limit=0):
 
         subfolder_path = os.path.join(folder_path, subfolder)
 
-        # if there is no FTPdetectinfo file in the folder, skip it
-        useful = any(
-            item.startswith("FTPdetectinfo")
-            and item.endswith(".txt")
-            and len(item) == 47
-            and item[14].isalpha()
-            and item[15].isalpha()
-            for item in os.listdir(subfolder_path)
-        )
-        if not useful:
-            continue
-
         # station_name = subfolder[:6]
         # stations_config_state[station_name] = False
         # filtered_subfolder_path = os.path.join(current_destination, subfolder)
         # os.makedirs(filtered_subfolder_path, exist_ok=True) saving all images in same folder for now
-
+        unfiltered_imgs = []
+        temp = []
+        ftp_path = None
         print("Fecthing files in:", subfolder_path)
         for file in os.listdir(subfolder_path):
             file_path = os.path.join(subfolder_path, file)
 
             # add relevant FF files to processing list
             if file.startswith("FF_") and file.endswith(".fits"):
-                unfiltered_imgs.append(file_path)
+                temp.append(file_path)
 
             # copy relevant ftpdetectinfo file
             if (
@@ -236,16 +223,19 @@ def extract_data(folder_path, limit=0):
                     shutil.copy(file_path, filtered_subfolder_path)
                 else:
                     pass """
-
+        if ftp_path is None:
+            continue
+        unfiltered_imgs.extend(temp)
+        del temp
         for i in unfiltered_imgs:
             # preproccess/crop the file here
+            png_count += cropPNG(i, ftp_path, current_destination)
             if 0 < limit <= png_count:  # limit number of images processed
                 stop = True
                 break
-            png_count += cropPNG(i, ftp_path, current_destination)
             # it can produce more than one image
             fits_count += 1
-        unfiltered_imgs = []
+
         print(f"{png_count}/{limit}")
         if stop:
             break
@@ -301,9 +291,6 @@ def get_configs(path):
             print("Station", i, "is missing a .config file")
 
 
-dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
-destination = "./mldatasets/"
-
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()
 
@@ -318,31 +305,34 @@ parser.add_argument(
     help="Number of images to extract. May vary slightly due to different amount of detections in a single fits file. Use 0 to disable limit.",
 )
 parser.add_argument(
-    "padding", type=int, nargs="?", default=20, help="Detection padding in px"
+    "-p", type=int, nargs="?", default=20, help="Detection padding in px"
 )
 parser.add_argument("--no_crop", action="store_false", help="Disable image cropping")
-parser.add_argument(
-    "--clean", action="store_true", help="Deletes existing mldataset folder."
-)
 parser.add_argument(
     "--newest-first",
     action="store_true",
     help="Extract files starting from newest first. Default is random order.",
 )
+parser.add_argument(
+    "-k", action="store_true", help="Keeps class imbalance of the original dataset."
+)
 
 # Parse the command-line arguments
 args = parser.parse_args()
 
-current_date = datetime.now().strftime("%Y%m%d")
-dataset_name = f"{args.n}_p{args.padding}_{'newest' if args.newest_first else 'random'}{'_no_crop' if args.no_crop else 'crop'}_{current_date}"
+dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
+destination = "datasets/"
+dataset_name = f"CNN_n{args.n}_p{args.p}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
 destination = os.path.join(destination, dataset_name)
-print("Padding:", args.padding, "\nNumber of positive examples:", args.n)
-print(
-    "Image cropping disabled." if not args.no_crop else "Image cropping enabled.", "\n"
-)
 
-if args.clean:
-    shutil.rmtree(destination, ignore_errors=True)
+print("Creating dataset", dataset_name, "...\n")
+
+if os.path.exists(destination):
+    print(f"Dataset {dataset_name} already exists. Do you want to overwrite it? (y/n)")
+    if input().lower() != "y":
+        print("Exiting...")
+        exit()
+    shutil.rmtree(destination)
 for i in dirs:
     if args.c:
         print("Getting configs for", i)
@@ -351,7 +341,7 @@ for i in dirs:
         print("Extracting data for", i)
         extract_data(i, args.n)
 
-print("\n\nCompressing and archiving the dataset...")
-with tarfile.open(f"{dataset_name}.tar.bz2", "w:bz2") as tar:
-    tar.add(destination, arcname=".")
+print("\nCompressing and archiving the dataset...")
+with tarfile.open(f"{destination}.tar.bz2", "w:bz2") as tar:
+    tar.add(destination, arcname=dataset_name)
 print(f"{dataset_name}.tar.bz2 has been created successfully.")

@@ -1,5 +1,5 @@
 __pycache__/
 keras_tuner/
-mldataset/
-mldataset.tar
-mldataset.tar.bz2
+tb_logs/
+datasets/
+temp/

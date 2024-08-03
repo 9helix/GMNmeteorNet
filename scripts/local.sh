@@ -1,6 +1,11 @@
 #!/bin/bash
 
-# Download the dataset from the server
-scp -i /home/helix/.ssh/rms dgrzinic@gmn.uwo.ca:mldataset.tar.bz2 .
-rm -rf mldataset
-bzip2 -df mldataset.tar.bz2 && tar -xf mldataset.tar
+# Prompt the user for desired dataset
+read -p "Enter the dataset name: " dataset_name
+
+# Navigate to the datasets directory
+cd datasets
+
+# Download and extract dataset
+scp -i /home/helix/.ssh/rms dgrzinic@gmn.uwo.ca:datasets/${dataset_name}.tar.bz2 .
+tar -xjf ${dataset_name}.tar.bz2
