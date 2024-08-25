@@ -1,0 +1,12 @@
+used batch size of 64
+
+for most of the models best learning rate is 1e-3, although it yields unstable performances over epoch, unlike 1e-4 which is more stable but plateaus at a bit lower performancescore
+most of the models reaches plateaus inside first 20 epochs
+
+CNN_20240505_1_config seems like one of the best arhcitecture taking into consideration its fbeta score and number of parameters.
+
+all models up until now achieve similar performance even though they all have different architectures. it could be that wrongly labeled images are outliers in the dataset - that there are no outher such images present in the dataset.
+
+fiachras tflite has fbeta score of around 0.88.
+
+CNN_20240505_1 has slightly better performance with dropout layer than without it.

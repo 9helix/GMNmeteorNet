@@ -138,6 +138,8 @@ def cropPNG(fits_path: str, ftp_path: str, destination: str):
             im = im.convert("L")  # converts to grescale
             im.save(os.path.join(destination, png_name + ".png"))
             ct += 1
+            if ct >= args.l:
+                break
     return ct
 
 
@@ -316,13 +318,19 @@ parser.add_argument(
 parser.add_argument(
     "-k", action="store_true", help="Keeps class imbalance of the original dataset."
 )
+parser.add_argument(
+    "-l",
+    type=int,
+    default=0,
+    help="Limit of extracted images per folder. Default is 0 (no limit).",
+)
 
 # Parse the command-line arguments
 args = parser.parse_args()
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
 destination = "datasets/"
-dataset_name = f"CNN_n{args.n}_p{args.p}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
+dataset_name = f"CNN_n{args.n}_p{args.p}_l{args.l}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
 destination = os.path.join(destination, dataset_name)
 
 print("Creating dataset", dataset_name, "...\n")

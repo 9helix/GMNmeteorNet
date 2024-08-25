@@ -11,16 +11,6 @@ hyperband finds sligtly better models than bayesian optimization but it takes it
 
 commented line 88 in .venv/lib/python3.10/site-packages/tensorboard/plugins/scalar/summary_v2.py as it prevented tensorboard from working with keras tuner.
 
-Model notes
-Fiachra's model had 3441 (13.44 KB) parameters.
-CNN_20240630_1 has 384k (1.47 MB) parameters.
-
-These are the best models:
-CNN_20240505_1 has Fbeta score 0.986. 5391 (21.06 KB) parameters.
-CNN_20240505_2 has Fbeta score 0.992. 24115 (94.20 KB) parameters.
-CNN_20240618_3 has Fbeta score 0.991. 1966 (7.68 KB) parameters.
-CNN_20240803_1 has Fbeta score 0.9877. 31497 (123.04 KB) parameters.
-
 Fbeta score varies depending on the image padding and whether the newest dataset images were used or were they picked at random. So the performance data should be formatted in some kind of table in the future to better analyze the best model.
 
 Fbeta score is currently used with beta=2. It is the approximation that recall is twice as important as precision.
@@ -28,5 +18,7 @@ for current hypermodel configuration, hyperband peaks at around 0.993 fbeta scor
 
 
 When taking newest images from the dataset instead of at random up until now, it seems that recall stays about the same, but the problem arises with a drop in precision. Probably because of the higher presence of insects on camera footage.
+
+
 
 an attempt was made to replace current detector with a YOLO model but was stracthed because of poor results. When provided with an image with a meteor on it, it either doesn't detect it or detects it with a low amount of confidence. This might be because meteors are just too similar to other artifacts on images for the model to be able to discern what is what. Since the meteors are very small compared to the entire image size, this creates an unbalanced set between what is a meteor and what is not.
