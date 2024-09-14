@@ -138,8 +138,6 @@ def cropPNG(fits_path: str, ftp_path: str, destination: str):
             im = im.convert("L")  # converts to grescale
             im.save(os.path.join(destination, png_name + ".png"))
             ct += 1
-            if ct >= args.l:
-                break
     return ct
 
 
@@ -229,14 +227,17 @@ def extract_data(folder_path, limit=0):
             continue
         unfiltered_imgs.extend(temp)
         del temp
-        for i in unfiltered_imgs:
+        for i in range(len(unfiltered_imgs)):
             # preproccess/crop the file here
-            png_count += cropPNG(i, ftp_path, current_destination)
+            png_count += cropPNG(unfiltered_imgs[i], ftp_path, current_destination)
             if 0 < limit <= png_count:  # limit number of images processed
                 stop = True
                 break
             # it can produce more than one image
             fits_count += 1
+            if "RejectedFiles" in ftp_path and i >= args.l - 1 >= 0:
+                print("Limit reached for artifacts. Skipping the rest of the folder...")
+                break
 
         print(f"{png_count}/{limit}")
         if stop:
@@ -322,7 +323,7 @@ parser.add_argument(
     "-l",
     type=int,
     default=0,
-    help="Limit of extracted images per folder. Default is 0 (no limit).",
+    help="Limit of extracted images per folder for artifacts. Default is 0 (no limit).",
 )
 
 # Parse the command-line arguments
@@ -333,7 +334,7 @@ destination = "datasets/"
 dataset_name = f"CNN_n{args.n}_p{args.p}_l{args.l}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
 destination = os.path.join(destination, dataset_name)
 
-print("Creating dataset", dataset_name, "...\n")
+print("Creating dataset", dataset_name, "...\n\n")
 
 if os.path.exists(destination):
     print(f"Dataset {dataset_name} already exists. Do you want to overwrite it? (y/n)")
@@ -343,10 +344,10 @@ if os.path.exists(destination):
     shutil.rmtree(destination)
 for i in dirs:
     if args.c:
-        print("Getting configs for", i)
+        print("Getting configs from", i)
         get_configs(i)
     else:
-        print("Extracting data for", i)
+        print("Extracting data from", i, "\n")
         extract_data(i, args.n)
 
 print("\nCompressing and archiving the dataset...")
