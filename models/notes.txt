@@ -10,3 +10,61 @@ all models up until now achieve similar performance even though they all have di
 fiachras tflite has fbeta score of around 0.88.
 
 CNN_20240505_1 has slightly better performance with dropout layer than without it.
+
+seems datasets with size over 10k dont improve performance, rather they reduce it. probably because number of outlier images increases which harms the Fscore.
+
+CNN_n10000_p20_random
+True positives: 985
+True negatives: 942
+False positives: 69
+False negatives: 5
+
+Precision: 0.9345351043643264
+Recall: 0.9949494949494949
+
+F1-Score: 0.9637964774951078
+Fbeta: 0.9822497008376545
+
+CNN_n30000_p20_l0_random
+
+True positives: 3010
+True negatives: 2742
+False positives: 207
+False negatives: 41
+
+Precision: 0.9356543363382033
+Recall: 0.98656178302196
+
+F1-Score: 0.9604339502233566
+Fbeta: 0.975941897412619
+
+CNN_n30000_p20_l30_random
+
+True positives: 2933
+True negatives: 2739
+False positives: 210
+False negatives: 118
+
+Precision: 0.933184855233853
+Recall: 0.9613241560144214
+
+F1-Score: 0.947045527930255
+Fbeta: 0.9555613474946243
+
+CNN_n10000_p20_l30_random
+
+True positives: 977
+True negatives: 857
+False positives: 153
+False negatives: 13
+
+Precision: 0.8646017699115044
+Recall: 0.9868686868686869
+
+F1-Score: 0.9216981132075471
+Fbeta: 0.9597249508840864
+
+
+fiachras
+30000 l0
+0.971

@@ -5,6 +5,7 @@ import random
 import shutil
 from datetime import datetime
 import tarfile
+import time
 
 from PIL import Image
 
@@ -199,7 +200,11 @@ def extract_data(folder_path, limit=0):
         temp = []
         ftp_path = None
         print("Fecthing files in:", subfolder_path)
-        for file in os.listdir(subfolder_path):
+
+        files = os.listdir(subfolder_path)
+        if args.l > 0:
+            random.shuffle(files)
+        for file in files:
             file_path = os.path.join(subfolder_path, file)
 
             # add relevant FF files to processing list
@@ -230,11 +235,12 @@ def extract_data(folder_path, limit=0):
         for i in range(len(unfiltered_imgs)):
             # preproccess/crop the file here
             png_count += cropPNG(unfiltered_imgs[i], ftp_path, current_destination)
+            # it can produce more than one image
+            fits_count += 1
             if 0 < limit <= png_count:  # limit number of images processed
                 stop = True
                 break
-            # it can produce more than one image
-            fits_count += 1
+
             if "RejectedFiles" in ftp_path and i >= args.l - 1 >= 0:
                 print("Limit reached for artifacts. Skipping the rest of the folder...")
                 break
@@ -331,17 +337,20 @@ args = parser.parse_args()
 
 dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
 destination = "datasets/"
-dataset_name = f"CNN_n{args.n}_p{args.p}_l{args.l}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
+dataset_name = f"CNN_n{args.n}_p{args.p}{f'_l{args.l}' if args.l>0 else ''}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
 destination = os.path.join(destination, dataset_name)
 
-print("Creating dataset", dataset_name, "...\n\n")
-
 if os.path.exists(destination):
-    print(f"Dataset {dataset_name} already exists. Do you want to overwrite it? (y/n)")
+    print(
+        f"Dataset {dataset_name} already exists. Do you want to overwrite it? (y/n) ",
+        end="",
+    )
     if input().lower() != "y":
         print("Exiting...")
         exit()
     shutil.rmtree(destination)
+print("Creating dataset", dataset_name, "...\n\n")
+start_time = time.time()
 for i in dirs:
     if args.c:
         print("Getting configs from", i)
@@ -353,4 +362,7 @@ for i in dirs:
 print("\nCompressing and archiving the dataset...")
 with tarfile.open(f"{destination}.tar.bz2", "w:bz2") as tar:
     tar.add(destination, arcname=dataset_name)
+end_time = time.time()
 print(f"{dataset_name}.tar.bz2 has been created successfully.")
+elapsed_time = (end_time - start_time) / 60
+print(f"Total elapsed time: {elapsed_time:.2f} minutes")
