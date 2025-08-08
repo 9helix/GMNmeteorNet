@@ -11,7 +11,7 @@ from PIL import Image
 
 from RMS.Formats import FFfile, FTPdetectinfo
 from RMS.MLFilter import blackfill
-
+random.seed(10)  # so that rerunning the script when creating random dataset gives same images
 """
 This script is used for setting up ML dataset, specifically extracting station's .config files, FTPdetectinfo and .fits files on the server-side. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
 Functions crop_detection, cropPNG  were taken from the MLFilter.py on the RMS repo and slightly modified.
@@ -202,8 +202,8 @@ def extract_data(folder_path, limit=0):
         print("Fecthing files in:", subfolder_path)
 
         files = os.listdir(subfolder_path)
-        if args.l > 0:
-            random.shuffle(files)
+        #if args.l > 0: not needed for now
+        #    random.shuffle(files)
         for file in files:
             file_path = os.path.join(subfolder_path, file)
 
@@ -299,12 +299,46 @@ def get_configs(path):
         if stations_config_state[i] == False:
             print("Station", i, "is missing a .config file")
 
+def get_ftps(path):
+    """
+    Retrieves the FTPdetectinfo files from the given path and copies them to the appropriate destination.
 
+    Args:
+        path (str): The path to the directory containing the station folders.
+
+    Returns:
+        None
+    """
+    current_destination = os.path.join(destination, "FTPdetectinfo")
+    ct = 0
+    for subfolder in os.listdir(path):
+        subfolder_path = os.path.join(path, subfolder)
+        for file in os.listdir(subfolder_path):
+            if (
+                file.startswith("FTPdetectinfo")
+                and file.endswith(".txt")
+                and len(file) == 47
+                and file[14].isalpha()
+                and file[15].isalpha()
+            ):
+                ct += 1
+                file_path = os.path.join(subfolder_path, file)
+                
+
+                print("Found FTPdetectinfo for", subfolder)
+                os.makedirs(current_destination, exist_ok=True)
+                shutil.copy(file_path, current_destination)
+               
+
+    print("Total FTPdetectinfo files found:", ct)
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "-c", action="store_true", help="Execute get_configs instead of extract_data"
+)
+parser.add_argument(
+    "-f", action="store_true", help="Execute get_ftps instead of extract_data"
 )
 parser.add_argument(
     "-n",
@@ -330,14 +364,14 @@ parser.add_argument(
     type=int,
     default=0,
     help="Limit of extracted images per folder for artifacts. Default is 0 (no limit).",
-)
+) #this is useful because some night might have very similar artifacts, so their number in a certain night is limited to avoid overfitting
 
 # Parse the command-line arguments
 args = parser.parse_args()
 
-dirs = ["/home/mldataset/files/ConfirmedFiles/", "/home/mldataset/files/RejectedFiles/"]
+dirs = ["/home/mldataset/files/archived/ConfirmedFiles/", "/home/mldataset/files/archived/RejectedFiles/"]
 destination = "datasets/"
-dataset_name = f"CNN_n{args.n}_p{args.p}{f'_l{args.l}' if args.l>0 else ''}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
+dataset_name = f"GMN_n{args.n}_p{args.p}{f'_l{args.l}' if args.l>0 else ''}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
 destination = os.path.join(destination, dataset_name)
 
 if os.path.exists(destination):
@@ -355,6 +389,9 @@ for i in dirs:
     if args.c:
         print("Getting configs from", i)
         get_configs(i)
+    elif args.f:
+        print("Getting FTPdetectinfo from", i)
+        get_ftps(i)
     else:
         print("Extracting data from", i, "\n")
         extract_data(i, args.n)
