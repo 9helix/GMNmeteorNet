@@ -11,7 +11,10 @@ from PIL import Image
 
 from RMS.Formats import FFfile, FTPdetectinfo
 from RMS.MLFilter import blackfill
-random.seed(10)  # so that rerunning the script when creating random dataset gives same images
+
+random.seed(
+    10
+)  # so that rerunning the script when creating random dataset gives same images
 """
 This script is used for setting up ML dataset, specifically extracting station's .config files, FTPdetectinfo and .fits files on the server-side. Fits files are converted into pngs and cropped to the meteor detection (stored in FTPdetectinfo) according to its location on the original image. Default padding of 20px was added as Fiachra Feehilly saw improvements in ML model's performance when the meteor detection was not touching the edges of the image. 
 Functions crop_detection, cropPNG  were taken from the MLFilter.py on the RMS repo and slightly modified.
@@ -108,7 +111,7 @@ def crop_detection(detection_info, fits_dir, padding=20, should_crop=True):
     return square_crop_image
 
 
-def cropPNG(fits_path: str, ftp_path: str, destination: str):
+def cropPNG(fits_path: str, ftp_path: str, destinations: str):
     ftp_dir = os.path.dirname(ftp_path)
     # image_dest = os.path.join(destination, "images")
     # os.makedirs(image_dest, exist_ok=True)
@@ -126,18 +129,19 @@ def cropPNG(fits_path: str, ftp_path: str, destination: str):
         )
         # print(fits_file_name,os.path.basename(ftp_path))
         if fits_file_name == os.path.basename(fits_path):
-            square_crop_image = crop_detection(
-                detection_entry,
-                fits_path,
-                padding=args.p,
-                should_crop=args.no_crop,
-            )
-            if square_crop_image is None:
-                continue
-            # save the Numpy array as a png using PIL
-            im = Image.fromarray(square_crop_image)
-            im = im.convert("L")  # converts to grescale
-            im.save(os.path.join(destination, png_name + ".png"))
+            for i in range(len(args.p)):
+                square_crop_image = crop_detection(
+                    detection_entry,
+                    fits_path,
+                    padding=args.p[i],
+                    should_crop=args.no_crop,
+                )
+                if square_crop_image is None:
+                    continue
+                # save the Numpy array as a png using PIL
+                im = Image.fromarray(square_crop_image)
+                im = im.convert("L")  # converts to greyscale
+                im.save(os.path.join(destinations[i], png_name + ".png"))
             ct += 1
     return ct
 
@@ -154,11 +158,14 @@ def extract_data(folder_path, limit=0):
     Returns:
         None
     """
-    current_destination = os.path.join(
-        destination,
-        "Meteors/" if "ConfirmedFiles" in folder_path else "Artifacts/",
-    )
-    os.makedirs(current_destination, exist_ok=True)
+    full_destinations = []
+    for destination in datasets:
+        current_destination = os.path.join(
+            destination,
+            "Meteors/" if "ConfirmedFiles" in folder_path else "Artifacts/",
+        )
+        full_destinations.append(current_destination)
+        os.makedirs(current_destination, exist_ok=True)
 
     # apply limits per class
     if "ConfirmedFiles" in folder_path:
@@ -202,7 +209,7 @@ def extract_data(folder_path, limit=0):
         print("Fecthing files in:", subfolder_path)
 
         files = os.listdir(subfolder_path)
-        #if args.l > 0: not needed for now
+        # if args.l > 0: not needed for now
         #    random.shuffle(files)
         for file in files:
             file_path = os.path.join(subfolder_path, file)
@@ -232,9 +239,12 @@ def extract_data(folder_path, limit=0):
             continue
         unfiltered_imgs.extend(temp)
         del temp
+        random.shuffle(
+            unfiltered_imgs
+        )  # useful when number of artifacts from single session is limited, so that we then randomly sample the folder
         for i in range(len(unfiltered_imgs)):
             # preproccess/crop the file here
-            png_count += cropPNG(unfiltered_imgs[i], ftp_path, current_destination)
+            png_count += cropPNG(unfiltered_imgs[i], ftp_path, full_destinations)
             # it can produce more than one image
             fits_count += 1
             if 0 < limit <= png_count:  # limit number of images processed
@@ -264,7 +274,7 @@ def get_configs(path):
     Returns:
         None
     """
-    current_destination = os.path.join(destination, "configs")
+    current_destination = os.path.join(datasets[0], "configs")
     stations_config_state = {}
     ct = 0
     ct2 = 0
@@ -299,6 +309,7 @@ def get_configs(path):
         if stations_config_state[i] == False:
             print("Station", i, "is missing a .config file")
 
+
 def get_ftps(path):
     """
     Retrieves the FTPdetectinfo files from the given path and copies them to the appropriate destination.
@@ -309,7 +320,7 @@ def get_ftps(path):
     Returns:
         None
     """
-    current_destination = os.path.join(destination, "FTPdetectinfo")
+    current_destination = os.path.join(datasets[0], "FTPdetectinfo")
     ct = 0
     for subfolder in os.listdir(path):
         subfolder_path = os.path.join(path, subfolder)
@@ -323,14 +334,14 @@ def get_ftps(path):
             ):
                 ct += 1
                 file_path = os.path.join(subfolder_path, file)
-                
 
                 print("Found FTPdetectinfo for", subfolder)
                 os.makedirs(current_destination, exist_ok=True)
                 shutil.copy(file_path, current_destination)
-               
 
     print("Total FTPdetectinfo files found:", ct)
+
+
 # Create a parser for the command-line arguments
 parser = argparse.ArgumentParser()
 
@@ -348,7 +359,11 @@ parser.add_argument(
     help="Number of images to extract. May vary slightly due to different amount of detections in a single fits file. Use 0 to disable limit.",
 )
 parser.add_argument(
-    "-p", type=int, nargs="?", default=20, help="Detection padding in px"
+    "-p",
+    type=int,
+    nargs="+",
+    default=[20],
+    help="Detection padding in px, multiple paddings should be separated with space",
 )
 parser.add_argument("--no_crop", action="store_false", help="Disable image cropping")
 parser.add_argument(
@@ -364,26 +379,35 @@ parser.add_argument(
     type=int,
     default=0,
     help="Limit of extracted images per folder for artifacts. Default is 0 (no limit).",
-) #this is useful because some night might have very similar artifacts, so their number in a certain night is limited to avoid overfitting
+)  # this is useful because some night might have very similar artifacts, so their number in a certain night is limited to avoid overfitting
 
 # Parse the command-line arguments
 args = parser.parse_args()
 
-dirs = ["/home/mldataset/files/archived/ConfirmedFiles/", "/home/mldataset/files/archived/RejectedFiles/"]
-destination = "datasets/"
-dataset_name = f"GMN_n{args.n}_p{args.p}{f'_l{args.l}' if args.l>0 else ''}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
-destination = os.path.join(destination, dataset_name)
+dirs = [
+    "/home/mldataset/files/archived/ConfirmedFiles/",
+    "/home/mldataset/files/archived/RejectedFiles/",
+]
+destination_root = "datasets/"
+datasets = []
+dataset_names = []
+for padding in args.p:
+    dataset_name = f"GMN_n{args.n}_p{padding}{f'_l{args.l}' if args.l>0 else ''}_{'newest' if args.newest_first else 'random'}{'_no_crop' if not args.no_crop else ''}{'_unbalanced' if args.k else ''}"
+    destination = os.path.join(destination_root, dataset_name)
+    datasets.append(destination)
+    dataset_names.append(dataset_name)
 
-if os.path.exists(destination):
-    print(
-        f"Dataset {dataset_name} already exists. Do you want to overwrite it? (y/n) ",
-        end="",
-    )
-    if input().lower() != "y":
-        print("Exiting...")
-        exit()
-    shutil.rmtree(destination)
-print("Creating dataset", dataset_name, "...\n\n")
+for i in datasets:
+    if os.path.exists(i):
+        print(
+            f"Dataset {os.path.basename(i)} already exists. Do you want to overwrite it? (y/N) ",
+            end="",
+        )
+        if input().lower() != "y":
+            print("Exiting...")
+            exit()
+        shutil.rmtree(i)
+print("Creating datasets: ", ", ".join(datasets), "...\n\n")
 start_time = time.time()
 for i in dirs:
     if args.c:
@@ -397,9 +421,13 @@ for i in dirs:
         extract_data(i, args.n)
 
 print("\nCompressing and archiving the dataset...")
-with tarfile.open(f"{destination}.tar.bz2", "w:bz2") as tar:
-    tar.add(destination, arcname=dataset_name)
+for dataset in datasets:
+    with tarfile.open(f"{dataset}.tar.bz2", "w:bz2") as tar:
+        tar.add(dataset, arcname=os.path.basename(dataset))
 end_time = time.time()
-print(f"{dataset_name}.tar.bz2 has been created successfully.")
+print(
+    ", ".join([i + ".tar.bz2" for i in dataset_names]),
+    " have been created successfully.",
+)
 elapsed_time = (end_time - start_time) / 60
 print(f"Total elapsed time: {elapsed_time:.2f} minutes")
